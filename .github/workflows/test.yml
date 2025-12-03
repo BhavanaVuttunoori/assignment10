@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# Grant the workflow permission to write packages so GHCR pushes succeed
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -85,20 +90,21 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-      
       - uses: docker/setup-buildx-action@v3
-      
+
+      # Log in to GitHub Container Registry using the automatically provided GITHUB_TOKEN
       - uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
-            kaw393939/601_module9:latest
-            kaw393939/601_module9:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/assignment10:latest
+            ghcr.io/${{ github.repository_owner }}/assignment10:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=kaw393939/601_module9:cache
+          # inline cache is usually fine for CI; remove references to Docker Hub cache
           cache-to: type=inline,mode=max

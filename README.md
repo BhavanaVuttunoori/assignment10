@@ -11,283 +11,216 @@ You’ll use it to easily install Git, Python, Docker, etc.
 
 **Install Homebrew:**
 
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+```markdown
+# assignment10 — Secure User Model + Tests + CI/CD
 
-**Verify Homebrew:**
+This repository contains a FastAPI application that implements a secure SQLAlchemy user model, Pydantic validation, automated tests (unit + integration), and a CI/CD pipeline that builds and (optionally) publishes a Docker image to a container registry.
 
-```bash
-brew --version
-```
-
-If you see a version number, you're good to go.
+This README explains how to set up the project from scratch, run the application and tests locally, and configure CI/CD deployment. Follow each step below.
 
 ---
 
-# 🧩 2. Install and Configure Git
+## Prerequisites
 
-## Install Git
+- Python 3.10 or newer
+- pip
+- git (for source control operations)
+- Docker & docker-compose (required to run integration tests locally and to build images)
 
-- **MacOS (using Homebrew)**
-
-```bash
-brew install git
-```
-
-- **Windows**
-
-Download and install [Git for Windows](https://git-scm.com/download/win).  
-Accept the default options during installation.
-
-**Verify Git:**
-
-```bash
-git --version
-```
+Optional (for Playwright end-to-end tests):
+- Playwright browsers will be installed in CI or locally when requested.
 
 ---
 
-## Configure Git Globals
+## 1 — Create and activate a Python virtual environment
 
-Set your name and email so Git tracks your commits properly:
+Keep your environment isolated with a venv.
 
 ```bash
-git config --global user.name "Your Name"
-git config --global user.email "your_email@example.com"
+python3 -m venv .venv
+source .venv/bin/activate    # macOS / Linux
+# .venv\Scripts\activate    # Windows (PowerShell/CMD alternative)
 ```
 
-Confirm the settings:
+Upgrade pip and install dependencies:
 
 ```bash
-git config --list
-```
-
----
-
-## Generate SSH Keys and Connect to GitHub
-
-> Only do this once per machine.
-
-1. Generate a new SSH key:
-
-```bash
-ssh-keygen -t ed25519 -C "your_email@example.com"
-```
-
-(Press Enter at all prompts.)
-
-2. Start the SSH agent:
-
-```bash
-eval "$(ssh-agent -s)"
-```
-
-3. Add the SSH private key to the agent:
-
-```bash
-ssh-add ~/.ssh/id_ed25519
-```
-
-4. Copy your SSH public key:
-
-- **Mac/Linux:**
-
-```bash
-cat ~/.ssh/id_ed25519.pub | pbcopy
-```
-
-- **Windows (Git Bash):**
-
-```bash
-cat ~/.ssh/id_ed25519.pub | clip
-```
-
-5. Add the key to your GitHub account:
-   - Go to [GitHub SSH Settings](https://github.com/settings/keys)
-   - Click **New SSH Key**, paste the key, save.
-
-6. Test the connection:
-
-```bash
-ssh -T git@github.com
-```
-
-You should see a success message.
-
----
-
-# 🧩 3. Clone the Repository
-
-Now you can safely clone the course project:
-
-```bash
-git clone <repository-url>
-cd <repository-directory>
-```
-
----
-
-# 🛠️ 4. Install Python 3.10+
-
-## Install Python
-
-- **MacOS (Homebrew)**
-
-```bash
-brew install python
-```
-
-- **Windows**
-
-Download and install [Python for Windows](https://www.python.org/downloads/).  
-✅ Make sure you **check the box** `Add Python to PATH` during setup.
-
-**Verify Python:**
-
-```bash
-python3 --version
-```
-or
-```bash
-python --version
-```
-
----
-
-## Create and Activate a Virtual Environment
-
-(Optional but recommended)
-
-```bash
-python3 -m venv venv
-source venv/bin/activate   # Mac/Linux
-venv\Scripts\activate.bat  # Windows
-```
-
-### Install Required Packages
-
-```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ---
 
-# 🐳 5. (Optional) Docker Setup
+## 2 — Provide runtime secrets (local development)
 
-> Skip if Docker isn't used in this module.
+The application reads configuration from environment variables. A convenient local approach is a `.env` file placed at the repository root. An example file ` .env.example` is included.
 
-## Install Docker
-
-- [Install Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
-- [Install Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
-
-## Build Docker Image
-
-```bash
-docker build -t <image-name> .
-```
-
-## Run Docker Container
-
-```bash
-docker run -it --rm <image-name>
-```
-
----
-
-# 🚀 6. Running the Project
-
-- **Without Docker**:
-
-```bash
-python main.py
-```
-
-(or update this if the main script is different.)
-
-- **With Docker**:
-
-```bash
-docker run -it --rm <image-name>
-```
-
----
-
-# 📝 7. Submission Instructions
-
-After finishing your work:
-
-```bash
-git add .
-git commit -m "Complete Module X"
-git push origin main
-```
-
-Then submit the GitHub repository link as instructed.
-
----
-
-# 🔥 Useful Commands Cheat Sheet
-
-| Action                         | Command                                          |
-| ------------------------------- | ------------------------------------------------ |
-| Install Homebrew (Mac)          | `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` |
-| Install Git                     | `brew install git` or Git for Windows installer |
-| Configure Git Global Username  | `git config --global user.name "Your Name"`      |
-| Configure Git Global Email     | `git config --global user.email "you@example.com"` |
-| Clone Repository                | `git clone <repo-url>`                          |
-| Create Virtual Environment     | `python3 -m venv venv`                           |
-| Activate Virtual Environment   | `source venv/bin/activate` / `venv\Scripts\activate.bat` |
-| Install Python Packages        | `pip install -r requirements.txt`               |
-| Build Docker Image              | `docker build -t <image-name> .`                |
-| Run Docker Container            | `docker run -it --rm <image-name>`               |
-| Push Code to GitHub             | `git add . && git commit -m "message" && git push` |
-
----
-
-# 📋 Notes
-
-- Install **Homebrew** first on Mac.
-- Install and configure **Git** and **SSH** before cloning.
-- Use **Python 3.10+** and **virtual environments** for Python projects.
-- **Docker** is optional depending on the project.
-
----
-
-# 📎 Quick Links
-
-- [Homebrew](https://brew.sh/)
-- [Git Downloads](https://git-scm.com/downloads)
-- [Python Downloads](https://www.python.org/downloads/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [GitHub SSH Setup Guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
-
----
-
-# Secrets & local setup
-
-This project reads sensitive configuration from a local `.env` file (root of the project) using `pydantic-settings`.
-
-Steps to set up secrets locally:
-
-1. Copy the example file and generate a secure secret key:
+Create your `.env` and add a secure SECRET_KEY:
 
 ```bash
 cp .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-# paste the printed value into .env as SECRET_KEY
+python -c "import secrets, json; print(secrets.token_urlsafe(32))"
+# Edit .env and paste the printed value as SECRET_KEY
 ```
 
-2. Make sure `.env` is listed in `.gitignore` (it is by default in this repo). Never commit the real `.env` to git.
+Important: `.env` is in `.gitignore` by default. Do not commit real secrets to version control.
 
-3. Install dependencies and run tests as usual:
+Key environment variables used by the app and tests:
+- SECRET_KEY — secret used for token creation
+- DATABASE_URL — SQLAlchemy database URL for integration tests or running the app
+- POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB — used by docker-compose or CI Postgres service
+
+---
+
+## 3 — Run the application locally
+
+If you want to run the FastAPI app locally (no Docker):
 
 ```bash
-python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-python -m pytest -q
+# Ensure DATABASE_URL is set (example: SQLite for local quick runs)
+export DATABASE_URL="sqlite:///./test.db"
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-If you'd like, I can generate a `.env` for you locally and keep it out of source control (I already created one in your working tree). Let me know if you want that removed or replaced with a different SECRET_KEY.
+Open http://localhost:8000 in your browser (or the app's root) to verify the API.
+
+Notes:
+- For full integration with Postgres, use the Docker Compose instructions below.
+
+---
+
+## 4 — Run unit tests (fast)
+
+Unit tests exercise pure-Python logic like password hashing and Pydantic validation.
+
+```bash
+source .venv/bin/activate
+pytest tests/unit/ -q
+```
+
+If tests fail locally due to a compiled native dependency, run them in CI (Actions) where the environment is a clean Ubuntu runner.
+
+---
+
+## 5 — Run integration tests locally (Postgres)
+
+Integration tests need a running Postgres instance. Use Docker Compose to start the DB service.
+
+Start Postgres (example `docker-compose.yml` is included):
+
+```bash
+docker-compose up -d postgres
+# Wait for the DB to be healthy (or use `docker-compose ps`)
+export DATABASE_URL=postgresql://user:password@localhost:5432/mytestdb
+pytest tests/integration/ -q
+```
+
+When finished:
+
+```bash
+docker-compose down
+```
+
+---
+
+## 6 — Build and run the Docker image locally
+
+Build the image:
+
+```bash
+docker build -t <your-docker-username>/assignment10:local .
+```
+
+Run the container (override DATABASE_URL via env):
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL="postgresql://user:password@db:5432/mytestdb" \
+  <your-docker-username>/assignment10:local
+```
+
+Test the running service at http://localhost:8000.
+
+---
+
+## 7 — CI/CD on GitHub Actions (what the pipeline does)
+
+The provided workflow implements three stages:
+
+1) `test` job
+- Runs on `ubuntu-latest`.
+- Starts a Postgres service (Docker image) for integration tests.
+- Installs Python dependencies and Playwright browsers (if e2e tests are used).
+- Sets `DATABASE_URL` to point at the service and runs unit and integration tests.
+
+2) `security` job
+- Builds a local Docker image in the job and scans it with Trivy for high/critical vulnerabilities.
+
+3) `deploy` job (runs only on `main` and after security)
+- Logs into a container registry and pushes the built image with tags `latest` and `sha`.
+
+Secrets required by the workflow (when using Docker Hub):
+- `DOCKERHUB_USERNAME` — Docker Hub username
+- `DOCKERHUB_TOKEN` — Docker Hub access token (recommended) or password
+
+If you prefer to avoid Docker Hub credentials, the workflow can be modified to push to GitHub Container Registry (GHCR) using the built-in `GITHUB_TOKEN` (no extra secrets). Ask to switch to GHCR and the workflow will be updated accordingly.
+
+---
+
+## 8 — Add repository secrets for deploy (Docker Hub)
+
+1. Create a Docker Hub access token:
+   - On Docker Hub, go to Account Settings → Security → New Access Token.
+   - Copy the token value.
+
+2. In GitHub repository settings → Secrets and variables → Actions, add two secrets:
+   - `DOCKERHUB_USERNAME` = your Docker Hub username
+   - `DOCKERHUB_TOKEN` = the token you created
+
+Once added, a push to `main` will trigger the full pipeline and (if all checks pass) push images to Docker Hub.
+
+---
+
+## 9 — How to interpret CI results and collect screenshots for submission
+
+- After pushing your code, open the repository's Actions tab and click the latest workflow run.
+- Verify the `test` job completes successfully (green check). Save a screenshot of the run summary.
+- Verify the `security` job scanned the image without fatal findings (or with acceptable results per assignment). Save a screenshot.
+- Verify the `deploy` job completed and the Docker image was pushed to the registry. Open your Docker Hub (or GHCR) repository and capture a screenshot showing the pushed tags.
+
+Include these screenshots in your submission materials.
+
+---
+
+## 10 — Submission checklist (what to include)
+
+- A link to this GitHub repository (public or accessible per instructor guidelines).
+- Screenshots of:
+  - Successful GitHub Actions workflow run
+  - Docker Hub (or GHCR) showing the pushed image and tags
+- `REFLECTION.md` describing challenges, what you learned, and any deviations
+- README updated with the test/run instructions (this file)
+
+---
+
+## Troubleshooting notes
+
+- If unit tests fail locally due to a compiled native dependency (e.g., cryptography), prefer running tests on the GitHub Actions runner which provides a clean environment.
+- If integration tests fail, verify the Postgres service is healthy and `DATABASE_URL` is pointing at the expected host/port.
+- For Docker-related failures, rebuild images with `--no-cache` to avoid stale layers:
+
+```bash
+docker build --no-cache -t <image> .
+```
+
+---
+
+## Contact / Next steps
+
+- If you want me to push the prepared commits and trigger CI, tell me whether you want the deploy to target Docker Hub (you will add secrets) or GHCR (no extra secrets). I can update the workflow and push accordingly.
+
+Good luck — follow the steps in order and CI will validate the integration tests and container build on a clean runner.
+
+```
+
