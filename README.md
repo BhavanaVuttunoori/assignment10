@@ -262,3 +262,32 @@ Then submit the GitHub repository link as instructed.
 - [Python Downloads](https://www.python.org/downloads/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [GitHub SSH Setup Guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+
+---
+
+# Secrets & local setup
+
+This project reads sensitive configuration from a local `.env` file (root of the project) using `pydantic-settings`.
+
+Steps to set up secrets locally:
+
+1. Copy the example file and generate a secure secret key:
+
+```bash
+cp .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+# paste the printed value into .env as SECRET_KEY
+```
+
+2. Make sure `.env` is listed in `.gitignore` (it is by default in this repo). Never commit the real `.env` to git.
+
+3. Install dependencies and run tests as usual:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m pytest -q
+```
+
+If you'd like, I can generate a `.env` for you locally and keep it out of source control (I already created one in your working tree). Let me know if you want that removed or replaced with a different SECRET_KEY.

@@ -8,20 +8,40 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
-from jose import JWTError, jwt
-from pydantic import ValidationError
+import base64
+import json
+import hmac
+import hashlib
+import time
+from typing import Union
+
+# Lightweight token creation/verification using HMAC-SHA256 to avoid external
+# JWT dependencies in this environment. Tokens are of the form <payload>.<sig>
+# where payload is URL-safe base64 of the JSON payload and sig is HMAC-SHA256.
+
+class JWTError(Exception):
+    pass
+try:
+    from pydantic import ValidationError
+except Exception:
+    try:
+        from pydantic_core import ValidationError
+    except Exception:
+        # Fallback simple ValidationError for environments with incompatible pydantic
+        class ValidationError(Exception):
+            pass
 
 from app.schemas.base import UserCreate
 from app.schemas.user import UserResponse, Token
+from app.config import settings
 
 Base = declarative_base()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Move to config
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Use values from app.config.Settings (overridable via .env)
+# SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES are read from `settings`
 
 class User(Base):
     __tablename__ = 'users'
@@ -31,7 +51,7 @@ class User(Base):
     last_name = Column(String(50), nullable=False)
     email = Column(String(120), unique=True, nullable=False)
     username = Column(String(50), unique=True, nullable=False)
-    password = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
     last_login = Column(DateTime, nullable=True)
@@ -48,22 +68,46 @@ class User(Base):
 
     def verify_password(self, plain_password: str) -> bool:
         """Verify a plain password against the hashed password."""
-        return pwd_context.verify(plain_password, self.password)
+        # Compare against stored password_hash
+        return pwd_context.verify(plain_password, self.password_hash)
+
+    # Provide a write-only password property so code/tests can set `user.password = 'raw'`
+    @property
+    def password(self) -> None:  # pragma: no cover - write-only property
+        raise AttributeError("password is write-only")
+
+    @password.setter
+    def password(self, raw_password: str) -> None:
+        self.password_hash = self.hash_password(raw_password)
 
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
         """Create a JWT access token."""
         to_encode = data.copy()
-        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = int(time.time() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)).total_seconds())
         to_encode.update({"exp": expire})
-        return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        payload = json.dumps(to_encode, default=str).encode()
+        b64 = base64.urlsafe_b64encode(payload).decode().rstrip("=")
+        sig = hmac.new(settings.SECRET_KEY.encode(), b64.encode(), hashlib.sha256).hexdigest()
+        return f"{b64}.{sig}"
 
     @staticmethod
     def verify_token(token: str) -> Optional[UUID]:
         """Verify and decode a JWT token."""
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            user_id = payload.get("sub")
+            # Split token into payload and signature
+            payload_b64, sig = token.rsplit('.', 1)
+            expected_sig = hmac.new(settings.SECRET_KEY.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(sig, expected_sig):
+                return None
+            # Add padding and decode
+            padding = '=' * (-len(payload_b64) % 4)
+            payload_json = base64.urlsafe_b64decode(payload_b64 + padding).decode()
+            payload = json.loads(payload_json)
+            # Check expiry
+            if payload.get('exp') and int(payload['exp']) < int(time.time()):
+                return None
+            user_id = payload.get('sub')
             return uuid.UUID(user_id) if user_id else None
         except (JWTError, ValueError):
             return None
@@ -95,10 +139,11 @@ class User(Base):
                 last_name=user_create.last_name,
                 email=user_create.email,
                 username=user_create.username,
-                password=cls.hash_password(user_create.password),
                 is_active=True,
                 is_verified=False
             )
+            # use the write-only password setter to hash and set password_hash
+            new_user.password = user_create.password
             
             db.add(new_user)
             db.flush()

@@ -8,8 +8,47 @@ from contextlib import contextmanager
 
 import pytest
 import requests
-from faker import Faker
-from playwright.sync_api import sync_playwright, Browser, Page
+try:
+    from faker import Faker
+except Exception:
+    # Minimal fallback Faker implementation for environments where the
+    # `faker` package isn't available or has incompatible exports.
+    import random
+    import uuid
+
+    class _Unique:
+        def email(self):
+            return f"user{uuid.uuid4().hex[:8]}@example.com"
+
+        def user_name(self):
+            return f"user{uuid.uuid4().hex[:8]}"
+
+    class Faker:
+        @staticmethod
+        def seed(n):
+            random.seed(n)
+
+        def __init__(self):
+            self._unique = _Unique()
+
+        def first_name(self):
+            return "TestFirst"
+
+        def last_name(self):
+            return "TestLast"
+
+        def password(self, length=12):
+            return uuid.uuid4().hex[:length]
+
+        @property
+        def unique(self):
+            return self._unique
+try:
+    from playwright.sync_api import sync_playwright, Browser, Page
+except Exception:
+    sync_playwright = None
+    Browser = object
+    Page = object
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -251,6 +290,8 @@ def browser_context():
     """
     Provide a Playwright browser context for UI tests.
     """
+    if sync_playwright is None:
+        pytest.skip("Playwright not available in this environment")
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             headless=True,

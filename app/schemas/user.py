@@ -63,3 +63,9 @@ class UserLogin(BaseModel):
             }
         }
     )
+
+
+class UserRead(UserResponse):
+    """Alias schema for returning user data (omits password_hash)."""
+
+    model_config = ConfigDict(from_attributes=True)
