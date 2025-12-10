@@ -78,7 +78,20 @@ class User(Base):
 
     @password.setter
     def password(self, raw_password: str) -> None:
-        self.password_hash = self.hash_password(raw_password)
+        # If a pre-hashed password is provided (for tests or fixtures), detect it
+        # and store it directly instead of hashing again. passlib's CryptContext
+        # can identify whether a string is already a valid hash for the
+        # configured schemes.
+        try:
+            identified = pwd_context.identify(raw_password)
+        except Exception:
+            identified = None
+
+        if identified:
+            # raw_password looks like an existing hash (bcrypt, etc.)
+            self.password_hash = raw_password
+        else:
+            self.password_hash = self.hash_password(raw_password)
 
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
