@@ -5,6 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# allow cache-busting from CI to force pip reinstall of requirements when needed
+ARG CACHEBUST=1
+
 RUN apt-get update && \
    apt-get upgrade -y && \
    apt-get install -y --no-install-recommends gcc python3-dev libssl-dev && \
@@ -14,7 +17,10 @@ RUN apt-get update && \
    useradd -r -g appgroup appuser
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# use CACHEBUST to ensure this layer is re-run when we need a fresh pip install
+ARG CACHEBUST
+RUN echo "cachebust=$CACHEBUST" > /dev/null && \
+   pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 RUN chown -R appuser:appgroup /app
