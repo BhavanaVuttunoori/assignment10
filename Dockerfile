@@ -1,9 +1,12 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
    PYTHONUNBUFFERED=1
 
 WORKDIR /app
+
+# allow cache-busting from CI to force pip reinstall of requirements when needed
+ARG CACHEBUST=1
 
 RUN apt-get update && \
    apt-get upgrade -y && \
@@ -14,7 +17,11 @@ RUN apt-get update && \
    useradd -r -g appgroup appuser
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# use CACHEBUST to ensure this layer is re-run when we need a fresh pip install
+ARG CACHEBUST
+RUN echo "cachebust=$CACHEBUST" > /dev/null && \
+   # Install requirements using constraints to pin transitive dependency versions
+   pip install --no-cache-dir --upgrade -r requirements.txt -c constraints.txt
 
 COPY . .
 RUN chown -R appuser:appgroup /app
