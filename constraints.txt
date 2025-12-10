@@ -1,0 +1,6 @@
+# constraints.txt - pin transitive dependencies to fixed safe versions reported by Trivy
+# Update these pins if Trivy reports newer fixed versions in subsequent scans.
+h11==0.16.0
+python-jose==3.4.0
+starlette==0.49.1
+urllib3==2.6.0

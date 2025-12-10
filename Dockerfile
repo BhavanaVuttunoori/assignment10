@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
    PYTHONUNBUFFERED=1
@@ -20,8 +20,8 @@ COPY requirements.txt .
 # use CACHEBUST to ensure this layer is re-run when we need a fresh pip install
 ARG CACHEBUST
 RUN echo "cachebust=$CACHEBUST" > /dev/null && \
-   # Ensure packages are upgraded to the pinned versions in requirements.txt
-   pip install --no-cache-dir --upgrade -r requirements.txt
+   # Install requirements using constraints to pin transitive dependency versions
+   pip install --no-cache-dir --upgrade -r requirements.txt -c constraints.txt
 
 COPY . .
 RUN chown -R appuser:appgroup /app
