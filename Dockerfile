@@ -20,7 +20,8 @@ COPY requirements.txt .
 # use CACHEBUST to ensure this layer is re-run when we need a fresh pip install
 ARG CACHEBUST
 RUN echo "cachebust=$CACHEBUST" > /dev/null && \
-   pip install --no-cache-dir -r requirements.txt
+   # Ensure packages are upgraded to the pinned versions in requirements.txt
+   pip install --no-cache-dir --upgrade -r requirements.txt
 
 COPY . .
 RUN chown -R appuser:appgroup /app
