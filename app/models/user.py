@@ -87,7 +87,12 @@ class User(Base):
         except Exception:
             identified = None
 
-        if identified:
+        # passlib may not always identify a hash in some environments or
+        # for certain hash variants. As a safe fallback, also treat strings
+        # that look like bcrypt hashes (start with "$2") as pre-hashed.
+        looks_like_bcrypt = isinstance(raw_password, str) and raw_password.startswith("$2")
+
+        if identified or looks_like_bcrypt:
             # raw_password looks like an existing hash (bcrypt, etc.)
             self.password_hash = raw_password
         else:
